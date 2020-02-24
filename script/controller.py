@@ -25,7 +25,7 @@ class odom_state(object):
         self.yaw = None
         self.vx = None
         self.vy = None
-        self.speed = None
+        self.speed = 0
 
     def update_vehicle_state(self, odom_msg):
         self.time = odom_msg.header.stamp.to_sec()
@@ -40,7 +40,6 @@ class odom_state(object):
         self.vx = odom_msg.twist.twist.linear.x
         self.vy = odom_msg.twist.twist.linear.y
         self.speed = np.sqrt(self.vx**2 + self.vy**2)
-        # print("this is the current speed", self.speed)
 
     def get_position(self):
         return [self.x, self.y]
@@ -80,14 +79,13 @@ class AckermannController:
         self.pid_str_prop = rospy.get_param("~str_prop")
 
         # subscribers, publishers
-        rospy.Subscriber("MSLcar0/ground_truth/odometry", Odometry, self.odom_cb)
-        rospy.Subscriber("MSLcar0/command/trajectory", MultiDOFJointTrajectory, self.desired_waypoints_cb)
+        rospy.Subscriber("/carla/" + rolename + "/odometry", Odometry, self.odom_cb)
+        rospy.Subscriber("command/trajectory", MultiDOFJointTrajectory, self.desired_waypoints_cb)
         self.command_pub = rospy.Publisher("/carla/" + rolename + "/ackermann_cmd", AckermannDrive, queue_size=10)
         self.vehicle_cmd_pub = rospy.Publisher("/carla/" + rolename + "/vehicle_control_cmd", CarlaEgoVehicleControl, queue_size=10)
         self.ctrl_timer = rospy.Timer(rospy.Duration(1.0/ctrl_freq), self.timer_cb)
 
     def desired_waypoints_cb(self, msg):
-
         for i, pt in enumerate(msg.points):
             self.path[i, 0] = pt.transforms[0].translation.x
             self.path[i, 1] = pt.transforms[0].translation.y
@@ -97,7 +95,6 @@ class AckermannController:
         self.path_tree = KDTree(self.path)
         if not self.pathReady:
             self.pathReady = True
-
 
     def odom_cb(self, msg):
         self.state.update_vehicle_state(msg)
@@ -113,16 +110,6 @@ class AckermannController:
         cmd_msg.speed = 0
         cmd_msg.acceleration = 0
         cmd_msg.jerk = 0
-
-
-        # vehicle_cmd_msg = CarlaEgoVehicleControl()
-        # vehicle_cmd_msg.header.stamp = rospy.Time.now()
-        # vehicle_cmd_msg.header.frame_id = "map"
-        # vehicle_cmd_msg.throttle = 0
-        # vehicle_cmd_msg.steer = 0
-        # vehicle_cmd_msg.brake = 0
-        # vehicle_cmd_msg.hand_brake = 0
-        # vehicle_cmd_msg.reverse = 0
 
         if self.pathReady and self.stateReady:
             pos_x, pos_y = self.state.get_position()
@@ -181,12 +168,12 @@ class AckermannController:
 
     def compute_ackermann_cmd(self, target_pt):
         pos_x, pos_y, yaw = self.state.get_pose()
-        if np.linalg.norm([target_pt[0] - pos_x, target_pt[1] - pos_y]) < 1:
-            print("target point too close!!!!!!!!")
-            if self.steer_cache:
-                return self.steer_cache
-            else:
-                return 0.0
+        # if np.linalg.norm([target_pt[0] - pos_x, target_pt[1] - pos_y]) < 1:
+        #     print("target point too close!!!!!!!!")
+        #     if self.steer_cache:
+        #         return self.steer_cache
+        #     else:
+        #         return 0.0
 
         egoOri = np.array([np.cos(yaw), np.sin(yaw), 0])
         rel_pos = np.array([target_pt[0] - pos_x, target_pt[1] - pos_y, 0])

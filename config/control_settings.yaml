@@ -1,0 +1,20 @@
+
+controller_pid:
+  # role_name: "ego_vehicle"
+  # override the default values of the pid speed controller
+  # (only relev ant for ackermann control mode)
+  speed_Kp: 0.15
+  speed_Ki: 0.00
+  speed_Kd: 0.50
+  # override the default values of the pid acceleration controller
+  # (only relevant for ackermann control mode)
+  accel_Kp: 0.02
+  accel_Ki: 0.00
+  accel_Kd: 0.05
+
+
+
+  throttle_base: 0.2
+  brake_prop: 0.9
+  steer_prop: 0.5
+  speed_prop: 0.15

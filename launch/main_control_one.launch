@@ -3,7 +3,7 @@
 <launch>
 
 	<include file="$(find carla_ackermann_control)/launch/carla_ackermann_control.launch">
-		<arg name="rolename" value="stanford_ego" />
+		<arg name="rolename" value="stanford_hero" />
 	</include>
 
 </launch>

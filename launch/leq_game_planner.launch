@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+  <arg name="time_step" default="0.5" />
+  <arg name="plan_steps" default="20" />
+  <arg name="ref_speed" default="5.0" />
+
+  <node pkg="leq_game" type="leq_planner.jl" name="game_planner" output="screen" >
+    <param name="rolename_player1" value="stanford_hero" />
+    <param name="rolename_player2" value="stanford_ego" />
+    <param name="rs_player1" value="-1.0" />
+    <param name="rs_player2" value="1.0" />
+    <param name="plan_steps" value="$(arg plan_steps)" />
+    <param name="ref_speed" value="$(arg ref_speed)" />
+  </node>
+
+</launch>

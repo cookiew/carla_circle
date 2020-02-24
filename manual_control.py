@@ -159,6 +159,7 @@ class World(object):
         self._actor_filter = actor_filter
         self.init_positionx = args.positionx
         self.init_positiony = args.positiony
+        self.init_yaw = args.yaw
 
         self.color = args.color
 
@@ -209,7 +210,7 @@ class World(object):
             # for i in range(10):
             #     print(" these are all the available spawn points ", spawn_points[i])
             # spawn_point = spawn_points[179]
-            spawn_point = Transform(Location(x=self.init_positionx, y=self.init_positiony, z=2.5), Rotation(pitch=1, yaw=180, roll=1))
+            spawn_point = Transform(Location(x=self.init_positionx, y=self.init_positiony, z=2.5), Rotation(pitch=0, yaw=self.init_yaw, roll=0))
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
         # Set up the sensors.
         self.collision_sensor = CollisionSensor(self.player, self.hud)
@@ -876,13 +877,19 @@ def main():
         default=-8.5,
         help='actor start position y coordinate ')
     argparser.add_argument(
+        '--yaw',
+        type=float,
+        metavar='YAW',
+        default=0,
+        help='actor start pose yaw angel ')
+    argparser.add_argument(
         '--color',
         # type=string,
         metavar='COLOR',
         default='255,255,255',
         help='color of the spawn vehicle')
     args = argparser.parse_args()
-    
+
     args.width, args.height = [int(x) for x in args.res.split('x')]
 
     log_level = logging.DEBUG if args.debug else logging.INFO

@@ -19,7 +19,7 @@ import numpy as np
 
 class DesiredWaypointsVisualization:
     def __init__(self):
-        rospy.Subscriber("MSLcar0/command/trajectory", MultiDOFJointTrajectory, self.des_traj_cb)
+        rospy.Subscriber("command/trajectory", MultiDOFJointTrajectory, self.des_traj_cb)
         self.waypoints_pub = rospy.Publisher("carla/viz/des_waypoints", Marker, queue_size=10)
 
     def des_traj_cb(self, msg):
