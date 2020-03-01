@@ -40,7 +40,7 @@ class odom_state(object):
         self.yaw = ori_euler[2]
         self.vx = odom_msg.twist.twist.linear.x
         self.vy = odom_msg.twist.twist.linear.y
-        self.speed = np.sqrt(self.vx**2 + self.vy**2) * 0.7 + self.speed * 0.3    # add a basic low pass filter .....
+        self.speed = np.sqrt(self.vx**2 + self.vy**2) * 0.9 + self.speed * 0.1    # add a basic low pass filter .....
 
     def get_position(self):
         return [self.x, self.y]
@@ -88,59 +88,55 @@ class AckermannController:
         # subscribers, publishers
         rospy.Subscriber("/carla/" + self.rolename + "/odometry", Odometry, self.odom_cb)
         rospy.Subscriber("command/trajectory", MultiDOFJointTrajectory, self.desired_waypoints_cb)
-        rospy.Subscriber("/carla/" + self.rolename + "/ctrl_stage", String, self.control_stage_cb)
+        rospy.Subscriber("/carla/stanford_ego/ctrl_stage", String, self.control_stage_cb)
         self.command_pub = rospy.Publisher("/carla/" + self.rolename + "/ackermann_cmd", AckermannDrive, queue_size=10)
         self.vehicle_cmd_pub = rospy.Publisher("/carla/" + self.rolename + "/vehicle_control_cmd", CarlaEgoVehicleControl, queue_size=10)
         self.ctrl_timer = rospy.Timer(rospy.Duration(1.0/ctrl_freq), self.timer_cb)
 
     def control_stage_cb(self, msg):
-        self.control_stage = msg
+        self.control_stage = msg.data
 
     def desired_waypoints_cb(self, msg):
-        if self.rolename == "stanford_ego":
+        # if self.rolename == "stanford_ego":
             # only consider is for the entering vehicle
-            if self.control_stage == "CIRCLE_MODE":
-                print(" her haha is ready? ", self.stateReady,  self.state.get_position())
-                radi = 20.0
-                if self.stateReady:
-                    pos_x, pos_y = self.state.get_position()
-                    ang = zeros(shape(self.traj_steps + 1,))
-                    ang[0] = np.arctan2(pos_y, pos_x)
-                    ang_inc = self.ref_speed * self.time_step/ radi
+        if self.control_stage == "CIRCLE_MODE":
+            radi = 20.0
+            if self.stateReady:
+                pos_x, pos_y = self.state.get_position()
+                vel = self.state.get_speed()
+                ang = np.zeros(shape=(self.traj_steps + 1,))
+                ang[0] = np.arctan2(pos_y, pos_x) + 0.05
+                circle_speed = min(vel + 3, self.ref_speed)
+                ang_inc = circle_speed * self.time_step/ radi
 
-                    for i in range(self.traj_steps):
-                        self.path[i, 0] = radi * np.cos(ang[i])
-                        self.path[i, 1] = radi * np.sin(ang[i])
-                        self.vel_path[i, 0] = self.ref_speed
-                        ang[i + 1] = ang[i] + ang_inc
-                    print(rospy.get_name(), "this is path ", self.path)
-                    self.path_tree = KDTree(self.path)
-                    if not self.pathReady:
-                        self.pathReady = True
-
-            else:
-                print(" her hahawwwww is ready? ", self.stateReady,  self.state.get_position())
-                for i, pt in enumerate(msg.points):
-                    self.path[i, 0] = pt.transforms[0].translation.x
-                    self.path[i, 1] = pt.transforms[0].translation.y
-                    self.vel_path[i, 0] = pt.velocities[0].linear.x
-                    self.vel_path[i, 1] = pt.velocities[0].linear.y
-                    print(rospy.get_name(), "this is path ", self.path)
+                for i in range(self.traj_steps):
+                    self.path[i, 0] = radi * np.cos(ang[i])
+                    self.path[i, 1] = radi * np.sin(ang[i])
+                    self.vel_path[i, 0] = circle_speed
+                    ang[i + 1] = ang[i] + ang_inc
                 self.path_tree = KDTree(self.path)
                 if not self.pathReady:
                     self.pathReady = True
+
         else:
-            print(" her haha is rwwwweady? ", self.stateReady,  self.state.get_position())
-            print(" what do i get ", msg.points)
+
             for i, pt in enumerate(msg.points):
                 self.path[i, 0] = pt.transforms[0].translation.x
                 self.path[i, 1] = pt.transforms[0].translation.y
                 self.vel_path[i, 0] = pt.velocities[0].linear.x
                 self.vel_path[i, 1] = pt.velocities[0].linear.y
-            print(rospy.get_name(), "this is path ", self.path)
             self.path_tree = KDTree(self.path)
             if not self.pathReady:
                 self.pathReady = True
+        # else:
+        #     for i, pt in enumerate(msg.points):
+        #         self.path[i, 0] = pt.transforms[0].translation.x
+        #         self.path[i, 1] = pt.transforms[0].translation.y
+        #         self.vel_path[i, 0] = pt.velocities[0].linear.x
+        #         self.vel_path[i, 1] = pt.velocities[0].linear.y
+        #     self.path_tree = KDTree(self.path)
+        #     if not self.pathReady:
+        #         self.pathReady = True
 
 
 
@@ -151,26 +147,33 @@ class AckermannController:
 
     def timer_cb(self, event):
         if self.pathReady and self.stateReady:
-            pos_x, pos_y = self.state.get_position()
+            pos_x, pos_y, pos_yaw = self.state.get_pose()
 
             # pick target w/o collision avoidance, closest point on the traj and one point ahead
             _, idx = self.path_tree.query([pos_x, pos_y])
-            if idx < self.traj_steps - 1:
+            if idx < self.traj_steps - 3:
                 target_pt = self.path_tree.data[idx + 1, :]
                 target_vel = self.vel_path[idx + 1, :]
+                str_target_pt = self.path_tree.data[idx + 3, :]
             else:
                 target_pt = self.path_tree.data[-1, :]
                 target_vel = self.vel_path[-1, :]
+                str_target_pt = self.path_tree.data[-1, :]
                 print("CONTROLLER: at the end of the desired waypoits!!!")
 
+            # target_ang = np.arctan2(target_pt[1] - pos_y, target_pt[0] - pos_x)
+
+            # if abs(target_ang - pos_yaw) > np.pi/2.0:
             target_speed = np.linalg.norm(target_vel)
-            steer = self.compute_ackermann_cmd(target_pt)
+            # else:
+            #     target_speed = 0
+            steer = self.compute_ackermann_cmd(str_target_pt)
 
             # control values for CarlaEgoVehicleControl
             vehicle_cmd_msg = CarlaEgoVehicleControl()
             vehicle_cmd_msg.steer = -steer
             # print("target %2.2f"% target_speed, " ego %2.2f"%self.state.get_speed())
-            if self.state.get_speed() - target_speed > 0.2:
+            if self.state.get_speed() - target_speed > 0.05:
                 print(rospy.get_name(), " in braking mode ")
                 vehicle_cmd_msg.throttle = 0
                 vehicle_cmd_msg.brake = np.clip((self.state.get_speed() - target_speed) * self.pid_param["brake_prop"], \

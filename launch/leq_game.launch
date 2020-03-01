@@ -3,23 +3,15 @@
 <launch>
   <rosparam file="$(find carla_circle)/config/control_settings.yaml" command="load" />
 
-  <arg name="time_step" default="0.5" />
-  <arg name="plan_steps" default="20" />
+  <arg name="time_step" default="0.3" />
+  <arg name="plan_steps" default="7" />
   <arg name="ref_speed" default="5.0" />
 
-	<!-- share one bridge  -->
-	<include file="$(find carla_ros_bridge)/launch/carla_ros_bridge.launch">
+  <!-- share one bridge  -->
+	<!-- <include file="$(find carla_ros_bridge)/launch/carla_ros_bridge.launch">
     <arg name="ego_vehicle_name" value="['stanford_ego', 'stanford_hero']" />
-	</include>
+	</include> -->
 
-
-  <!-- <node pkg="leq_game" type="leq_planner.jl" name="game_planner" output="screen" >
-    <param name="rolename_player1" value="stanford_hero" />
-    <param name="rolename_player2" value="stanford_ego" />
-    <param name="rs_player1" value="-1.0" />
-    <param name="rs_player2" value="1.0" />
-    <param name="plan_steps" value="$(arg plan_steps)" />
-  </node> -->
 
   <!-- launch main components  -->
   <group ns="stanford_hero" >

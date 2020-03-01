@@ -66,11 +66,8 @@ class SupervisorController:
 
         self.current_stage = None
 
-
         # subscribers, publishers
         rospy.Subscriber("/carla/" + rolename + "/odometry", Odometry, self.odom_cb)
-        # rospy.Subscriber("command/trajectory", MultiDOFJointTrajectory, self.desired_waypoints_cb)
-        # self.command_pub = rospy.Publisher("/carla/" + rolename + "/ackermann_cmd", AckermannDrive, queue_size=10)
         self.stage_pub = rospy.Publisher("/carla/" + rolename + "/ctrl_stage", String, queue_size=10)
         self.ctrl_timer = rospy.Timer(rospy.Duration(0.2), self.timer_cb)
 
@@ -84,7 +81,8 @@ class SupervisorController:
             pos_x, pos_y = self.state.get_position()
             vel = self.state.get_speed()
 
-            if np.linalg.norm([pos_x, pos_y]) < 25 or self.current_stage == "CIRCLE_MODE":
+            # if np.linalg.norm([pos_x, pos_y]) < 22 or self.current_stage == "CIRCLE_MODE":
+            if pos_x < 27 or self.current_stage == "CIRCLE_MODE":
                 self.stage_pub.publish(String("CIRCLE_MODE"))
                 self.current_stage = "CIRCLE_MODE"
             else:

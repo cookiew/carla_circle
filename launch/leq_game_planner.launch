@@ -1,17 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <launch>
-  <arg name="time_step" default="0.5" />
-  <arg name="plan_steps" default="20" />
+  <arg name="time_step" default="0.3" />
+  <arg name="plan_steps" default="7" />
   <arg name="ref_speed" default="5.0" />
+  <arg name="p1rs" />
+  <arg name="p2rs"  />
 
   <node pkg="leq_game" type="leq_planner.jl" name="game_planner" output="screen" >
     <param name="rolename_player1" value="stanford_hero" />
     <param name="rolename_player2" value="stanford_ego" />
-    <param name="rs_player1" value="-1.0" />
-    <param name="rs_player2" value="1.0" />
+    <param name="rs_player1" value="$(arg p1rs)" />
+    <param name="rs_player2" value="$(arg p2rs)" />
     <param name="plan_steps" value="$(arg plan_steps)" />
     <param name="ref_speed" value="$(arg ref_speed)" />
+    <param name="time_step" value="$(arg time_step)" />
   </node>
 
+
+  <!-- record rosbag -->
+  <node pkg="rosbag" type="record" name="rosbag_record_node" output="screen"
+      args="-o $(find leq_game)/bags/bag_$(arg p1rs)_$(arg p2rs)
+                                     /carla/stanford_ego/odometry
+                                     /carla/stanford_hero/odometry
+                                     /carla/stanford_ego/ctrl_stage
+                                     /carla/stanford_hero/ctrl_stage
+                                     /stanford_ego/command/trajectory
+                                     /stanford_hero/command/trajectory
+                                     /stanford_ego/carla/viz/des_waypoints
+                                     /stanford_ego/carla/viz/des_waypoints_array
+                                     /stanford_hero/carla/viz/des_waypoints
+                                     /stanford_hero/carla/viz/des_waypoints_array
+                                     " />
 </launch>
