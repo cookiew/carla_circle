@@ -7,6 +7,16 @@
   <arg name="p1rs" />
   <arg name="p2rs"  />
 
+  <!-- <node pkg="leq_game" type="nogame_planner.jl" name="game_planner" output="screen" >
+    <param name="rolename_player1" value="stanford_hero" />
+    <param name="rolename_player2" value="stanford_ego" />
+    <param name="rs_player1" value="$(arg p1rs)" />
+    <param name="rs_player2" value="$(arg p2rs)" />
+    <param name="plan_steps" value="$(arg plan_steps)" />
+    <param name="ref_speed" value="$(arg ref_speed)" />
+    <param name="time_step" value="$(arg time_step)" />
+  </node> -->
+
   <node pkg="leq_game" type="leq_planner.jl" name="game_planner" output="screen" >
     <param name="rolename_player1" value="stanford_hero" />
     <param name="rolename_player2" value="stanford_ego" />
@@ -18,9 +28,10 @@
   </node>
 
 
+
   <!-- record rosbag -->
   <node pkg="rosbag" type="record" name="rosbag_record_node" output="screen"
-      args="-o $(find leq_game)/bags/bag_$(arg p1rs)_$(arg p2rs)
+      args="-o $(find leq_game)/bags/nogame_$(arg p1rs)_$(arg p2rs)
                                      /carla/stanford_ego/odometry
                                      /carla/stanford_hero/odometry
                                      /carla/stanford_ego/ctrl_stage
