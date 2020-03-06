@@ -1,24 +1,34 @@
 # carla_circle
 
 
-workspace for ros and scripts to work with Carla Event 5
+run simulation for CARLA simulation with leq game planning and baseline w/o game
 
 
-*Stage 1*:
 
-    Each team will have a single agent only.  
-    No bot cars.  
-    Your agent will enter the roundabout, drive for 5 minutes, then leave. Entry/exit points are similar to the previous CARLA event.  
-    Success is determined by how long you can sustain driving on the roundabout without collisions.  
+- In the CARLA folder  ```./CarlaUE4.sh -carla-server -windowed -ResX=640 -ResY=480 -quality-level=Low```
 
-*Stage 2*:
+- launch two vehicles from carla_circle workspace
+```python3 manual_control.py --positionx 14.1 --positiony 14.1 --yaw -45 --rolename stanford_hero --color "255,100,100"```   
+```python3 manual_control.py  --positiony -4.5 --yaw 180 --rolename stanford_ego --color "255,200,200" --positionx 40.6```
 
-    Similar to Stage 1. However, each university is expected to instantiate and run two agents, instead of a single agent.  
+- launch planner and pass in parameters
+```roslaunch carla_circle leq_game_planner.launch p1rs:=10.0 p2rs:=10.0```
+
+- ```roslaunch carla_circle leq_game_bridge.launch```
+
+- ```roslaunch carla_circle leq_game.launch```
+
+
 
 ### carla version / carla ros version
 0.9.5
 
+##### Notes
+- this controller directly publishes carla\_vehicle\_control message
+- call julia functions from Python rosnode is very slow, do not know why
 
+- call julia function inside a callback function does not work
 
-### to run simulation  
-see wiki
+- no timer is available so the planner is called through ros rate
+
+- currently runs at 3Hz without problems 
